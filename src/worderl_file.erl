@@ -4,14 +4,33 @@
 %%%-------------------------------------------------------------------
 
 -module(worderl_file).
--export([get_file/1]).
+-export([split_file/2]).
 
 
--spec get_file(string()) -> {atom(), binary() | atom()}.
-get_file(Path) when is_list(Path) ->
-    case file:read_file(Path) of
-         {ok, Content} -> 
-            {ok, string:split(Content, "\n", all)};
+-spec split_file(string(), line | word) -> {atom(), list()}.
+split_file(Path, Action) when is_list(Path) ->
 
-         {error, _reason} -> {error, nonexists}
+    case {file:read_file(Path), Action} of
+        {{ok, Content}, line} -> 
+            lists:filter(
+              fun(Item) -> Item /= <<>> end, 
+              string:split(Content, "\n", all)
+             );
+
+
+        {{ok, Content}, word} -> 
+            Line_List = lists:filter(
+                          fun(Bin) -> Bin /= <<>> end, 
+                          string:split(Content, "\n", all)
+                         ),
+
+            lists:map(
+              fun(Bin) -> string:split(Bin, " ", all) end,
+              Line_List
+             );
+
+
+        {{error, _reason}, _Action} -> {error, nonexists}
     end.
+
+
